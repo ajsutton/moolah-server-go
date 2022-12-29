@@ -7,13 +7,13 @@ type Accounts interface {
 }
 
 func NewAccounts() Accounts {
-	return &AccountsDao{}
+	return &accountsDao{}
 }
 
-type AccountsDao struct {
+type accountsDao struct {
 }
 
-func (dao *AccountsDao) List() []values.Account {
-	var accounts []values.Account
+func (dao *accountsDao) List() []values.Account {
+	accounts := []values.Account{}
 	return accounts
 }

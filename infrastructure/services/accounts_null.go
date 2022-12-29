@@ -10,6 +10,5 @@ type AccountsNull struct {
 }
 
 func (a *AccountsNull) List() []values.Account {
-	var accounts []values.Account
-	return accounts
+	return []values.Account{}
 }

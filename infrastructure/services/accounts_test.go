@@ -16,16 +16,8 @@ var tests = []struct {
 
 func TestAccountsList(t *testing.T) {
 	runTests(t, func(t *testing.T, accounts Accounts) {
-		var want []values.Account
+		want := []values.Account{}
 		got := accounts.List()
 		assert.Equal(t, want, got)
 	})
-}
-
-func runTests(t *testing.T, f func(t *testing.T, accounts Accounts)) {
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			f(t, test.accounts)
-		})
-	}
 }

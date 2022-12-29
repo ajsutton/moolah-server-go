@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/moolah-server-go/infrastructure/services"
 )
 
@@ -35,10 +36,20 @@ func NullApplication(opts Application) Application {
 func (a *Application) RegisterHandlers() {
 	a.router.Get("/api/accounts/", a.ListAccounts)
 }
+
 func (a *Application) ListAccounts() (any, error) {
 	return a.accounts.List(), nil
 }
 
-func main() {
+func (a *Application) Start() error {
+	return a.router.Start(8080)
+}
 
+func main() {
+	application := NewApplication()
+	application.RegisterHandlers()
+	err := application.Start()
+	if err != nil {
+		fmt.Println("Exiting due to error: ", err)
+	}
 }
