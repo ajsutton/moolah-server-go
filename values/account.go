@@ -6,5 +6,5 @@ type Account struct {
 	Type     string `json:"type" binding:"required"`
 	Balance  uint64 `json:"balance" binding:"required"`
 	Position uint64 `json:"position"`
-	//Date     Date   `json:"date"`
+	Date     Date   `json:"date"`
 }
