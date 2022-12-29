@@ -24,6 +24,9 @@ jobs:
       - name: Test
         run: go test -json ./... > TestResults.json
 
+      - name: Vet
+        run: go vet ./...
+
       - name: Upload test results
         uses: actions/upload-artifact@v3
         with:
