@@ -16,6 +16,10 @@ func ParseDate(input string) (Date, error) {
 	return Date{t: t}, nil
 }
 
+func MakeDate(year int, month time.Month, day int) Date {
+	return Date{t: time.Date(year, month, day, 0, 0, 0, 0, time.UTC)}
+}
+
 const dateFormat = "2006-01-02"
 
 func (d Date) MarshalJSON() ([]byte, error) {

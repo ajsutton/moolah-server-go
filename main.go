@@ -3,6 +3,9 @@ package main
 import (
 	"fmt"
 	"github.com/moolah-server-go/infrastructure/services"
+	"github.com/moolah-server-go/values"
+
+	_ "github.com/proullon/ramsql/driver"
 )
 
 type Application struct {
@@ -10,8 +13,12 @@ type Application struct {
 	router   services.Router
 }
 
-func NewApplication() Application {
-	return Application{accounts: services.NewAccounts(), router: services.NewRouter()}
+func NewApplication(config values.Config) (Application, error) {
+	accounts, err := services.NewAccounts(config)
+	if err != nil {
+		return Application{}, err
+	}
+	return Application{accounts: accounts, router: services.NewRouter()}, nil
 }
 
 func NullApplication(opts Application) Application {
@@ -38,7 +45,7 @@ func (a *Application) RegisterHandlers() {
 }
 
 func (a *Application) ListAccounts() (any, error) {
-	return a.accounts.List(), nil
+	return a.accounts.List("user")
 }
 
 func (a *Application) Start() error {
@@ -46,9 +53,14 @@ func (a *Application) Start() error {
 }
 
 func main() {
-	application := NewApplication()
+	config := values.Config{DriverName: "ramsql", DataSourceName: "moolah"}
+	application, err := NewApplication(config)
+	if err != nil {
+		fmt.Println("Failed to init application: ", err)
+		return
+	}
 	application.RegisterHandlers()
-	err := application.Start()
+	err = application.Start()
 	if err != nil {
 		fmt.Println("Exiting due to error: ", err)
 	}
