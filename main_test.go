@@ -15,5 +15,5 @@ func TestListAccounts(t *testing.T) {
 
 	got, err := router.Call(http.MethodGet, "/api/accounts/")
 	require.Nil(t, err, "Got unexpected error")
-	require.Empty(t, got, "Expected empty account list")
+	require.Equal(t, "[]", got, "Expected empty account list")
 }
