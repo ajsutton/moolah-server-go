@@ -13,7 +13,7 @@ func TestListAccounts(t *testing.T) {
 	application := NullApplication(Application{accounts: accounts, router: router})
 	application.RegisterHandlers()
 
-	got, err := router.Call(http.MethodPost, "/api/accounts/")
+	got, err := router.Call(http.MethodGet, "/api/accounts/")
 	require.Nil(t, err, "Got unexpected error")
 	require.Empty(t, got, "Expected empty account list")
 }

@@ -9,7 +9,7 @@ import (
 )
 
 func TestAccountsList_Empty(t *testing.T) {
-	runTests(t, func(t *testing.T, accounts Accounts) {
+	runAccountsTests(t, func(t *testing.T, accounts Accounts) {
 		want := []values.Account{}
 		got, err := accounts.List("user")
 		require.NoError(t, err)
@@ -18,7 +18,7 @@ func TestAccountsList_Empty(t *testing.T) {
 }
 
 func TestAccountsCreate(t *testing.T) {
-	runTests(t, func(t *testing.T, accounts Accounts) {
+	runAccountsTests(t, func(t *testing.T, accounts Accounts) {
 		account := values.NullAccount()
 		// Don't yet support transactions which hold balance and date
 		account.Balance = 0
@@ -32,7 +32,7 @@ func TestAccountsCreate(t *testing.T) {
 	})
 }
 
-func runTests(t *testing.T, f func(t *testing.T, accounts Accounts)) {
+func runAccountsTests(t *testing.T, f func(t *testing.T, accounts Accounts)) {
 	accountsDao, err := NewAccounts(values.Config{
 		DriverName:     "ramsql",
 		DataSourceName: t.Name(),

@@ -1,7 +1,11 @@
 package services
 
 import (
+	"encoding/json"
 	"github.com/gin-gonic/gin"
+	"io"
+	"log"
+	"net"
 	"net/http"
 	"strconv"
 )
@@ -11,6 +15,8 @@ type Handler func() (any, error)
 type Router interface {
 	Get(url string, handler Handler)
 	Start(port int) error
+	Stop() error
+	Call(method string, url string) (string, error)
 }
 
 func NewRouter() Router {
@@ -21,6 +27,21 @@ func NewRouter() Router {
 
 type RouterGin struct {
 	engine *gin.Engine
+	server *http.Server
+}
+
+func (r *RouterGin) Call(method string, url string) (string, error) {
+	fullUrl := "http://" + r.server.Addr + url
+	resp, err := http.Get(fullUrl)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(body), nil
 }
 
 func (r *RouterGin) Get(url string, handler Handler) {
@@ -40,7 +61,31 @@ func (r *RouterGin) Get(url string, handler Handler) {
 }
 
 func (r *RouterGin) Start(port int) error {
-	return r.engine.Run("localhost:" + strconv.Itoa(port))
+	r.server = &http.Server{
+		Addr:    ":" + strconv.Itoa(port),
+		Handler: r.engine,
+	}
+	ch := make(chan int)
+	go func() {
+		ln, err := net.Listen("tcp", r.server.Addr)
+		if err != nil {
+			log.Fatal("Failed to start listening", err)
+			return
+		}
+		r.server.Addr = ln.Addr().String()
+		ch <- 0
+		err = r.server.Serve(ln)
+		if err != nil && err != http.ErrServerClosed {
+			log.Fatal("Failed to start serving", err)
+			return
+		}
+	}()
+	<-ch
+	return nil
+}
+
+func (r *RouterGin) Stop() error {
+	return r.server.Close()
 }
 
 func NullRouter() *RouterNull {
@@ -55,10 +100,22 @@ func (r *RouterNull) Start(port int) error {
 	return nil
 }
 
+func (f *RouterNull) Stop() error {
+	return nil
+}
+
 func (r *RouterNull) Get(url string, handler Handler) {
 	r.getHandlers[url] = handler
 }
 
-func (r *RouterNull) Call(method string, url string) (any, error) {
-	return r.getHandlers[url]()
+func (r *RouterNull) Call(method string, url string) (string, error) {
+	result, err := r.getHandlers[url]()
+	if err != nil {
+		return "", nil
+	}
+	serialized, err := json.Marshal(result)
+	if err != nil {
+		return "", err
+	}
+	return string(serialized), nil
 }
