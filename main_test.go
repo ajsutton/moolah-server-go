@@ -8,7 +8,7 @@ import (
 )
 
 func TestListAccounts(t *testing.T) {
-	application := NullApplication(Application{})
+	application := NullApplication()
 	router := application.router
 	application.RegisterHandlers()
 

@@ -22,22 +22,10 @@ func NewApplication(config values.Config) (Application, error) {
 	return Application{accounts: accounts, router: web.NewRouter()}, nil
 }
 
-func NullApplication(opts Application) Application {
-	var accounts db.Accounts
-	if opts.accounts != nil {
-		accounts = opts.accounts
-	} else {
-		accounts = db.NullAccounts()
-	}
-	var router web.Router
-	if opts.router != nil {
-		router = opts.router
-	} else {
-		router = web.NullRouter()
-	}
+func NullApplication() Application {
 	return Application{
-		accounts: accounts,
-		router:   router,
+		accounts: db.NullAccounts(),
+		router:   web.NullRouter(),
 	}
 }
 
