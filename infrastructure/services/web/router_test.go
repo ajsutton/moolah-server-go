@@ -1,4 +1,4 @@
-package services
+package web
 
 import (
 	"github.com/stretchr/testify/require"

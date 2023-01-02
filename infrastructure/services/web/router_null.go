@@ -1,4 +1,4 @@
-package services
+package web
 
 import (
 	"encoding/json"
@@ -46,7 +46,7 @@ func (r *RouterNull) Call(data CallData) (int, string, error) {
 	result, err := handlers[data.Url](&NullRequest{data})
 	if err != nil {
 		switch v := err.(type) {
-		case HttpError:
+		case RequestError:
 			return serialize(v.code, v.message)
 		default:
 			return serialize(http.StatusInternalServerError, err.Error())

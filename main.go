@@ -2,37 +2,38 @@ package main
 
 import (
 	"fmt"
-	"github.com/moolah-server-go/infrastructure/services"
+	"github.com/moolah-server-go/infrastructure/services/db"
+	"github.com/moolah-server-go/infrastructure/services/web"
 	"github.com/moolah-server-go/values"
 
 	_ "github.com/proullon/ramsql/driver"
 )
 
 type Application struct {
-	accounts services.Accounts
-	router   services.Router
+	accounts db.Accounts
+	router   web.Router
 }
 
 func NewApplication(config values.Config) (Application, error) {
-	accounts, err := services.NewAccounts(config)
+	accounts, err := db.NewAccounts(config)
 	if err != nil {
 		return Application{}, err
 	}
-	return Application{accounts: accounts, router: services.NewRouter()}, nil
+	return Application{accounts: accounts, router: web.NewRouter()}, nil
 }
 
 func NullApplication(opts Application) Application {
-	var accounts services.Accounts
+	var accounts db.Accounts
 	if opts.accounts != nil {
 		accounts = opts.accounts
 	} else {
-		accounts = services.NullAccounts()
+		accounts = db.NullAccounts()
 	}
-	var router services.Router
+	var router web.Router
 	if opts.router != nil {
 		router = opts.router
 	} else {
-		router = services.NullRouter()
+		router = web.NullRouter()
 	}
 	return Application{
 		accounts: accounts,
@@ -44,7 +45,7 @@ func (a *Application) RegisterHandlers() {
 	a.router.Get("/api/accounts/", a.ListAccounts)
 }
 
-func (a *Application) ListAccounts(request services.Request) (any, error) {
+func (a *Application) ListAccounts(request web.Request) (any, error) {
 	return a.accounts.List("user")
 }
 

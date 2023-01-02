@@ -1,4 +1,4 @@
-package services
+package web
 
 import (
 	"bytes"
@@ -101,7 +101,7 @@ func handlerWrapper(handler Handler) func(c *gin.Context) {
 		result, err := handler(&GinRequest{c})
 		if err != nil {
 			switch v := err.(type) {
-			case HttpError:
+			case RequestError:
 				c.AbortWithStatusJSON(v.code, v.message)
 			default:
 				c.AbortWithStatusJSON(http.StatusInternalServerError, err)

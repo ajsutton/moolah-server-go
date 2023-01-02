@@ -1,4 +1,4 @@
-package services
+package db
 
 import (
 	"github.com/moolah-server-go/values"
