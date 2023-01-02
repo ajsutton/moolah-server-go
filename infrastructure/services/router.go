@@ -18,7 +18,7 @@ type Router interface {
 	Post(url string, handler Handler)
 	Start(port int) error
 	Stop() error
-	Call(method string, url string) (string, error)
+	Call(method string, url string) (int, string, error)
 }
 
 func NewRouter() Router {
@@ -32,7 +32,7 @@ type RouterGin struct {
 	server *http.Server
 }
 
-func (r *RouterGin) Call(method string, url string) (string, error) {
+func (r *RouterGin) Call(method string, url string) (int, string, error) {
 	fullUrl := "http://" + r.server.Addr + url
 	var resp *http.Response
 	var err error
@@ -43,17 +43,17 @@ func (r *RouterGin) Call(method string, url string) (string, error) {
 		resp, err = http.Post(
 			fullUrl, "application/json", bytes.NewBufferString(""))
 	default:
-		return "", CallError("Unknown method type: " + method)
+		return 0, "", CallError("Unknown method type: " + method)
 	}
 	if err != nil {
-		return "", err
+		return 0, "", err
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", err
+		return 0, "", err
 	}
-	return string(body), nil
+	return resp.StatusCode, string(body), nil
 }
 
 func (r *RouterGin) Get(url string, handler Handler) {
@@ -70,7 +70,7 @@ func handlerWrapper(handler Handler) func(c *gin.Context) {
 		if err != nil {
 			switch v := err.(type) {
 			case HttpError:
-				_ = c.AbortWithError(v.code, v)
+				c.AbortWithStatusJSON(v.code, v.message)
 			default:
 				_ = c.AbortWithError(http.StatusInternalServerError, err)
 			}
@@ -136,7 +136,7 @@ func (r *RouterNull) Post(url string, handler Handler) {
 	r.postHandlers[url] = handler
 }
 
-func (r *RouterNull) Call(method string, url string) (string, error) {
+func (r *RouterNull) Call(method string, url string) (int, string, error) {
 	var handlers map[string]Handler
 	switch method {
 	case http.MethodGet:
@@ -144,17 +144,26 @@ func (r *RouterNull) Call(method string, url string) (string, error) {
 	case http.MethodPost:
 		handlers = r.postHandlers
 	default:
-		return "", CallError("Unknown method: " + method)
+		return 0, "", CallError("Unknown method: " + method)
 	}
 	result, err := handlers[url]()
 	if err != nil {
-		return "", nil
+		switch v := err.(type) {
+		case HttpError:
+			return serialize(v.code, v.message)
+		default:
+			return serialize(http.StatusInternalServerError, err.Error())
+		}
 	}
-	serialized, err := json.Marshal(result)
+	return serialize(http.StatusOK, result)
+}
+
+func serialize(status int, content any) (int, string, error) {
+	serialized, err := json.Marshal(content)
 	if err != nil {
-		return "", err
+		return 0, "", err
 	}
-	return string(serialized), nil
+	return status, string(serialized), nil
 }
 
 type CallError string
