@@ -1,16 +1,14 @@
 package main
 
 import (
-	"github.com/moolah-server-go/infrastructure/services"
 	"github.com/stretchr/testify/require"
 	"net/http"
 	"testing"
 )
 
 func TestListAccounts(t *testing.T) {
-	router := services.NullRouter()
-	accounts := services.NullAccounts()
-	application := NullApplication(Application{accounts: accounts, router: router})
+	application := NullApplication(Application{})
+	router := application.router
 	application.RegisterHandlers()
 
 	status, got, err := router.Call(http.MethodGet, "/api/accounts/")
