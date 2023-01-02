@@ -9,10 +9,9 @@ import (
 
 func TestListAccounts(t *testing.T) {
 	application := NullApplication()
-	router := application.router
 	application.RegisterHandlers()
 
-	status, got, err := router.Call(web.CallData{
+	status, got, err := application.router.Call(web.CallData{
 		Method: http.MethodGet,
 		Url:    "/api/accounts/",
 	})
