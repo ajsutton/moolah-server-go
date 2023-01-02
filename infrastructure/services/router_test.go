@@ -34,6 +34,19 @@ func Test_Get_ReturnsError(t *testing.T) {
 	})
 }
 
+func Test_Get_ReturnsUnexpectedError(t *testing.T) {
+	runRouterTests(t, func(t *testing.T, router Router) {
+		require.NoError(t, router.Start(0))
+		router.Get("/", func() (any, error) {
+			return nil, CallError("Woah!")
+		})
+		statusCode, got, err := router.Call(http.MethodGet, "/")
+		require.Equal(t, statusCode, http.StatusInternalServerError)
+		require.NoError(t, err)
+		require.Equal(t, "\"Woah!\"", got)
+	})
+}
+
 func Test_Post(t *testing.T) {
 	runRouterTests(t, func(t *testing.T, router Router) {
 		var want = "{\"a\": \"b\"}"

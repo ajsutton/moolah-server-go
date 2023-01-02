@@ -71,7 +71,7 @@ func handlerWrapper(handler Handler) func(c *gin.Context) {
 			case HttpError:
 				c.AbortWithStatusJSON(v.code, v.message)
 			default:
-				_ = c.AbortWithError(http.StatusInternalServerError, err)
+				c.AbortWithStatusJSON(http.StatusInternalServerError, err)
 			}
 			return
 		}
