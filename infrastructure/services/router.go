@@ -1,6 +1,7 @@
 package services
 
 import (
+	"bytes"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"io"
@@ -14,6 +15,7 @@ type Handler func() (any, error)
 
 type Router interface {
 	Get(url string, handler Handler)
+	Post(url string, handler Handler)
 	Start(port int) error
 	Stop() error
 	Call(method string, url string) (string, error)
@@ -32,7 +34,17 @@ type RouterGin struct {
 
 func (r *RouterGin) Call(method string, url string) (string, error) {
 	fullUrl := "http://" + r.server.Addr + url
-	resp, err := http.Get(fullUrl)
+	var resp *http.Response
+	var err error
+	switch method {
+	case http.MethodGet:
+		resp, err = http.Get(fullUrl)
+	case http.MethodPost:
+		resp, err = http.Post(
+			fullUrl, "application/json", bytes.NewBufferString(""))
+	default:
+		return "", CallError("Unknown method type: " + method)
+	}
 	if err != nil {
 		return "", err
 	}
@@ -45,7 +57,15 @@ func (r *RouterGin) Call(method string, url string) (string, error) {
 }
 
 func (r *RouterGin) Get(url string, handler Handler) {
-	r.engine.GET(url, func(c *gin.Context) {
+	r.engine.GET(url, handlerWrapper(handler))
+}
+
+func (r *RouterGin) Post(url string, handler Handler) {
+	r.engine.POST(url, handlerWrapper(handler))
+}
+
+func handlerWrapper(handler Handler) func(c *gin.Context) {
+	return func(c *gin.Context) {
 		result, err := handler()
 		if err != nil {
 			switch v := err.(type) {
@@ -57,7 +77,7 @@ func (r *RouterGin) Get(url string, handler Handler) {
 			return
 		}
 		c.JSON(http.StatusOK, result)
-	})
+	}
 }
 
 func (r *RouterGin) Start(port int) error {
@@ -89,11 +109,15 @@ func (r *RouterGin) Stop() error {
 }
 
 func NullRouter() *RouterNull {
-	return &RouterNull{getHandlers: make(map[string]Handler)}
+	return &RouterNull{
+		getHandlers:  make(map[string]Handler),
+		postHandlers: make(map[string]Handler),
+	}
 }
 
 type RouterNull struct {
-	getHandlers map[string]Handler
+	getHandlers  map[string]Handler
+	postHandlers map[string]Handler
 }
 
 func (r *RouterNull) Start(port int) error {
@@ -108,8 +132,21 @@ func (r *RouterNull) Get(url string, handler Handler) {
 	r.getHandlers[url] = handler
 }
 
+func (r *RouterNull) Post(url string, handler Handler) {
+	r.postHandlers[url] = handler
+}
+
 func (r *RouterNull) Call(method string, url string) (string, error) {
-	result, err := r.getHandlers[url]()
+	var handlers map[string]Handler
+	switch method {
+	case http.MethodGet:
+		handlers = r.getHandlers
+	case http.MethodPost:
+		handlers = r.postHandlers
+	default:
+		return "", CallError("Unknown method: " + method)
+	}
+	result, err := handlers[url]()
 	if err != nil {
 		return "", nil
 	}
@@ -118,4 +155,10 @@ func (r *RouterNull) Call(method string, url string) (string, error) {
 		return "", err
 	}
 	return string(serialized), nil
+}
+
+type CallError string
+
+func (b CallError) Error() string {
+	return string(b)
 }
