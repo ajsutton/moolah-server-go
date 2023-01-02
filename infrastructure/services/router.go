@@ -2,6 +2,7 @@ package services
 
 import (
 	"bytes"
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"io"
 	"log"
@@ -10,7 +11,7 @@ import (
 	"strconv"
 )
 
-type Handler func() (any, error)
+type Handler func(request Request) (any, error)
 
 type Router interface {
 	Get(url string, handler Handler)
@@ -18,6 +19,28 @@ type Router interface {
 	Start(port int) error
 	Stop() error
 	Call(data CallData) (int, string, error)
+}
+
+type Request interface {
+	Url() string
+	Method() string
+	BodyJson(target any) error
+}
+
+type GinRequest struct {
+	c *gin.Context
+}
+
+func (r *GinRequest) BodyJson(target any) error {
+	return r.c.ShouldBindJSON(target)
+}
+
+func (r *GinRequest) Url() string {
+	return r.c.Request.URL.String()
+}
+
+func (r *GinRequest) Method() string {
+	return r.c.Request.Method
 }
 
 type CallData struct {
@@ -45,8 +68,12 @@ func (r *RouterGin) Call(data CallData) (int, string, error) {
 	case http.MethodGet:
 		resp, err = http.Get(fullUrl)
 	case http.MethodPost:
+		jsonData, err := json.Marshal(data.Data)
+		if err != nil {
+			return 0, "", err
+		}
 		resp, err = http.Post(
-			fullUrl, "application/json", bytes.NewBufferString(""))
+			fullUrl, "application/json", bytes.NewBuffer(jsonData))
 	default:
 		return 0, "", CallError("Unknown method type: " + data.Method)
 	}
@@ -71,7 +98,7 @@ func (r *RouterGin) Post(url string, handler Handler) {
 
 func handlerWrapper(handler Handler) func(c *gin.Context) {
 	return func(c *gin.Context) {
-		result, err := handler()
+		result, err := handler(&GinRequest{c})
 		if err != nil {
 			switch v := err.(type) {
 			case HttpError:

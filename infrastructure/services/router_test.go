@@ -10,7 +10,7 @@ func Test_Get(t *testing.T) {
 	runRouterTests(t, func(t *testing.T, router Router) {
 		var want = "{\"a\": \"b\"}"
 		require.NoError(t, router.Start(0))
-		router.Get("/", func() (any, error) {
+		router.Get("/", func(request Request) (any, error) {
 			output := map[string]string{"a": "b"}
 			return output, nil
 		})
@@ -24,7 +24,7 @@ func Test_Get(t *testing.T) {
 func Test_Get_ReturnsError(t *testing.T) {
 	runRouterTests(t, func(t *testing.T, router Router) {
 		require.NoError(t, router.Start(0))
-		router.Get("/", func() (any, error) {
+		router.Get("/", func(request Request) (any, error) {
 			return nil, BadRequest("Woah!")
 		})
 		statusCode, got, err := router.Call(CallData{Method: http.MethodGet, Url: "/"})
@@ -37,7 +37,7 @@ func Test_Get_ReturnsError(t *testing.T) {
 func Test_Get_ReturnsUnexpectedError(t *testing.T) {
 	runRouterTests(t, func(t *testing.T, router Router) {
 		require.NoError(t, router.Start(0))
-		router.Get("/", func() (any, error) {
+		router.Get("/", func(request Request) (any, error) {
 			return nil, CallError("Woah!")
 		})
 		statusCode, got, err := router.Call(CallData{Method: http.MethodGet, Url: "/"})
@@ -50,15 +50,27 @@ func Test_Get_ReturnsUnexpectedError(t *testing.T) {
 func Test_Post(t *testing.T) {
 	runRouterTests(t, func(t *testing.T, router Router) {
 		var want = "{\"a\": \"b\"}"
+		sentData := TestData{"some value"}
+		var receivedData TestData
 		require.NoError(t, router.Start(0))
-		router.Post("/", func() (any, error) {
+		router.Post("/", func(request Request) (any, error) {
 			output := map[string]string{"a": "b"}
+
+			err := request.BodyJson(&receivedData)
+			if err != nil {
+				return nil, BadRequest(err.Error())
+			}
 			return output, nil
 		})
-		statusCode, got, err := router.Call(CallData{Method: http.MethodPost, Url: "/"})
+		statusCode, got, err := router.Call(CallData{
+			Method: http.MethodPost,
+			Url:    "/",
+			Data:   sentData,
+		})
 		require.NoError(t, err)
 		require.JSONEq(t, want, got)
 		require.Equal(t, statusCode, http.StatusOK)
+		require.Equal(t, sentData, receivedData)
 	})
 }
 
@@ -75,4 +87,8 @@ func runRouterTests(t *testing.T, f func(t *testing.T, router Router)) {
 			f(t, test.router)
 		})
 	}
+}
+
+type TestData struct {
+	Value string `json:"value"`
 }

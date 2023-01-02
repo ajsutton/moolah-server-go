@@ -44,7 +44,7 @@ func (a *Application) RegisterHandlers() {
 	a.router.Get("/api/accounts/", a.ListAccounts)
 }
 
-func (a *Application) ListAccounts() (any, error) {
+func (a *Application) ListAccounts(request services.Request) (any, error) {
 	return a.accounts.List("user")
 }
 

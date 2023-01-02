@@ -43,7 +43,7 @@ func (r *RouterNull) Call(data CallData) (int, string, error) {
 	default:
 		return 0, "", CallError("Unknown method: " + data.Method)
 	}
-	result, err := handlers[data.Url]()
+	result, err := handlers[data.Url](&NullRequest{data})
 	if err != nil {
 		switch v := err.(type) {
 		case HttpError:
@@ -61,4 +61,24 @@ func serialize(status int, content any) (int, string, error) {
 		return 0, "", err
 	}
 	return status, string(serialized), nil
+}
+
+type NullRequest struct {
+	data CallData
+}
+
+func (r NullRequest) Url() string {
+	return r.data.Url
+}
+
+func (r NullRequest) Method() string {
+	return r.data.Method
+}
+
+func (r NullRequest) BodyJson(target any) error {
+	jsonData, err := json.Marshal(r.data.Data)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(jsonData, target)
 }
