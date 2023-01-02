@@ -17,7 +17,13 @@ type Router interface {
 	Post(url string, handler Handler)
 	Start(port int) error
 	Stop() error
-	Call(method string, url string) (int, string, error)
+	Call(data CallData) (int, string, error)
+}
+
+type CallData struct {
+	Method string
+	Url    string
+	Data   any
 }
 
 func NewRouter() Router {
@@ -31,18 +37,18 @@ type RouterGin struct {
 	server *http.Server
 }
 
-func (r *RouterGin) Call(method string, url string) (int, string, error) {
-	fullUrl := "http://" + r.server.Addr + url
+func (r *RouterGin) Call(data CallData) (int, string, error) {
+	fullUrl := "http://" + r.server.Addr + data.Url
 	var resp *http.Response
 	var err error
-	switch method {
+	switch data.Method {
 	case http.MethodGet:
 		resp, err = http.Get(fullUrl)
 	case http.MethodPost:
 		resp, err = http.Post(
 			fullUrl, "application/json", bytes.NewBufferString(""))
 	default:
-		return 0, "", CallError("Unknown method type: " + method)
+		return 0, "", CallError("Unknown method type: " + data.Method)
 	}
 	if err != nil {
 		return 0, "", err

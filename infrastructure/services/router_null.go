@@ -33,17 +33,17 @@ func (r *RouterNull) Post(url string, handler Handler) {
 	r.postHandlers[url] = handler
 }
 
-func (r *RouterNull) Call(method string, url string) (int, string, error) {
+func (r *RouterNull) Call(data CallData) (int, string, error) {
 	var handlers map[string]Handler
-	switch method {
+	switch data.Method {
 	case http.MethodGet:
 		handlers = r.getHandlers
 	case http.MethodPost:
 		handlers = r.postHandlers
 	default:
-		return 0, "", CallError("Unknown method: " + method)
+		return 0, "", CallError("Unknown method: " + data.Method)
 	}
-	result, err := handlers[url]()
+	result, err := handlers[data.Url]()
 	if err != nil {
 		switch v := err.(type) {
 		case HttpError:

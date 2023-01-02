@@ -14,7 +14,7 @@ func Test_Get(t *testing.T) {
 			output := map[string]string{"a": "b"}
 			return output, nil
 		})
-		statusCode, got, err := router.Call(http.MethodGet, "/")
+		statusCode, got, err := router.Call(CallData{Method: http.MethodGet, Url: "/"})
 		require.NoError(t, err)
 		require.JSONEq(t, want, got)
 		require.Equal(t, statusCode, http.StatusOK)
@@ -27,7 +27,7 @@ func Test_Get_ReturnsError(t *testing.T) {
 		router.Get("/", func() (any, error) {
 			return nil, BadRequest("Woah!")
 		})
-		statusCode, got, err := router.Call(http.MethodGet, "/")
+		statusCode, got, err := router.Call(CallData{Method: http.MethodGet, Url: "/"})
 		require.Equal(t, statusCode, http.StatusBadRequest)
 		require.NoError(t, err)
 		require.Equal(t, "\"Woah!\"", got)
@@ -40,7 +40,7 @@ func Test_Get_ReturnsUnexpectedError(t *testing.T) {
 		router.Get("/", func() (any, error) {
 			return nil, CallError("Woah!")
 		})
-		statusCode, got, err := router.Call(http.MethodGet, "/")
+		statusCode, got, err := router.Call(CallData{Method: http.MethodGet, Url: "/"})
 		require.Equal(t, statusCode, http.StatusInternalServerError)
 		require.NoError(t, err)
 		require.Equal(t, "\"Woah!\"", got)
@@ -55,7 +55,7 @@ func Test_Post(t *testing.T) {
 			output := map[string]string{"a": "b"}
 			return output, nil
 		})
-		statusCode, got, err := router.Call(http.MethodPost, "/")
+		statusCode, got, err := router.Call(CallData{Method: http.MethodPost, Url: "/"})
 		require.NoError(t, err)
 		require.JSONEq(t, want, got)
 		require.Equal(t, statusCode, http.StatusOK)
